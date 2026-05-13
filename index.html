@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giroscópio</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c10;
+    --panel: #0d1218;
+    --border: #1a2530;
+    --alpha-color: #00e5ff;
+    --beta-color: #69ff47;
+    --gamma-color: #ff4d6d;
+    --text: #8baab8;
+    --text-bright: #d0e8f2;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-bright);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+
+  /* grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .title {
+    font-family: var(--mono);
+    font-size: clamp(11px, 3vw, 13px);
+    letter-spacing: .25em;
+    color: var(--alpha-color);
+    opacity: .7;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 8vw, 48px);
+    font-weight: 600;
+    letter-spacing: .05em;
+    line-height: 1;
+  }
+
+  /* ---- BARS ---- */
+  .bars {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bar-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .bar-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .15em;
+  }
+
+  .bar-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    min-width: 80px;
+    text-align: right;
+    transition: color .1s;
+  }
+
+  .bar-desc {
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  .track {
+    position: relative;
+    height: 18px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  /* center marker */
+  .track::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(255,255,255,.12);
+  }
+
+  .fill {
+    position: absolute;
+    top: 2px; bottom: 2px;
+    border-radius: 1px;
+    transition: left .06s linear, width .06s linear;
+  }
+
+  /* glow */
+  .fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 24px;
+    filter: blur(6px);
+    opacity: .8;
+  }
+
+  /* alpha */
+  .alpha .bar-label, .alpha .bar-value { color: var(--alpha-color); }
+  .alpha .fill { background: var(--alpha-color); }
+  .alpha .fill::after { background: var(--alpha-color); }
+
+  /* beta */
+  .beta .bar-label, .beta .bar-value { color: var(--beta-color); }
+  .beta .fill { background: var(--beta-color); }
+  .beta .fill::after { background: var(--beta-color); }
+
+  /* gamma */
+  .gamma .bar-label, .gamma .bar-value { color: var(--gamma-color); }
+  .gamma .fill { background: var(--gamma-color); }
+  .gamma .fill::after { background: var(--gamma-color); }
+
+  /* ---- BTN ---- */
+  .btn-wrap {
+    margin-top: 44px;
+    text-align: center;
+  }
+
+  #btnPermissao {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: 14px 36px;
+    background: transparent;
+    border: 1px solid var(--alpha-color);
+    color: var(--alpha-color);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s;
+    display: none;
+  }
+
+  #btnPermissao:hover {
+    background: rgba(0,229,255,.08);
+    box-shadow: 0 0 20px rgba(0,229,255,.25);
+  }
+
+  .status {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .15em;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .status.ok { color: var(--beta-color); }
+  .status.err { color: var(--gamma-color); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="title">// sensor_data</p>
+  <h1>GIROSCÓPIO</h1>
+</header>
+
+<div class="bars">
+
+  <!-- ALPHA -->
+  <div class="bar-row alpha">
+    <div class="bar-meta">
+      <div>
+        <span class="bar-label">ALPHA</span>
+        <div class="bar-desc">eixo Z · bússola · 0° → 360°</div>
+      </div>
+      <span class="bar-value" id="valAlpha">—</span>
+    </div>
+    <div class="track">
+      <div class="fill" id="fillAlpha" style="left:0%;width:0%"></div>
+    </div>
+  </div>
+
+  <!-- BETA -->
+  <div class="bar-row beta">
+    <div class="bar-meta">
+      <div>
+        <span class="bar-label">BETA</span>
+        <div class="bar-desc">eixo X · frente/trás · −180° → 180°</div>
+      </div>
+      <span class="bar-value" id="valBeta">—</span>
+    </div>
+    <div class="track">
+      <div class="fill" id="fillBeta" style="left:50%;width:0%"></div>
+    </div>
+  </div>
+
+  <!-- GAMMA -->
+  <div class="bar-row gamma">
+    <div class="bar-meta">
+      <div>
+        <span class="bar-label">GAMMA</span>
+        <div class="bar-desc">eixo Y · lateral · −90° → 90°</div>
+      </div>
+      <span class="bar-value" id="valGamma">—</span>
+    </div>
+    <div class="track">
+      <div class="fill" id="fillGamma" style="left:50%;width:0%"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="btn-wrap">
+  <button id="btnPermissao">Permitir acesso</button>
+  <p class="status" id="status">Aguardando sensor...</p>
+</div>
+
+<script>
+  const els = {
+    valAlpha:  document.getElementById('valAlpha'),
+    valBeta:   document.getElementById('valBeta'),
+    valGamma:  document.getElementById('valGamma'),
+    fillAlpha: document.getElementById('fillAlpha'),
+    fillBeta:  document.getElementById('fillBeta'),
+    fillGamma: document.getElementById('fillGamma'),
+    btn:       document.getElementById('btnPermissao'),
+    status:    document.getElementById('status'),
+  }
+
+  // barra unipolar (alpha): 0–360 → 0–100%
+  function setUnipolar(fill, val, val0, range) {
+    const pct = Math.min(Math.max(((val - val0) / range) * 100, 0), 100)
+    fill.style.left  = '0%'
+    fill.style.width = pct + '%'
+  }
+
+  // barra bipolar (beta/gamma): valor centrado em 50%
+  function setBipolar(fill, val, range) {
+    const half = Math.min(Math.max(val / range, -1), 1) * 50
+    if (half >= 0) {
+      fill.style.left  = '50%'
+      fill.style.width = half + '%'
+    } else {
+      fill.style.left  = (50 + half) + '%'
+      fill.style.width = (-half) + '%'
+    }
+  }
+
+  function handler(e) {
+    const a = e.alpha ?? 0
+    const b = e.beta  ?? 0
+    const g = e.gamma ?? 0
+
+    els.valAlpha.textContent = a.toFixed(1) + '°'
+    els.valBeta.textContent  = b.toFixed(1) + '°'
+    els.valGamma.textContent = g.toFixed(1) + '°'
+
+    setUnipolar(els.fillAlpha, a, 0, 360)
+    setBipolar(els.fillBeta,  b, 180)
+    setBipolar(els.fillGamma, g, 90)
+  }
+
+  function iniciar() {
+    window.addEventListener('deviceorientation', handler)
+    els.status.textContent = 'Sensor ativo ✓'
+    els.status.className = 'status ok'
+    els.btn.style.display = 'none'
+  }
+
+  // iOS requer permissão explícita
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+
+    els.btn.style.display = 'inline-block'
+    els.status.textContent = 'iOS detectado — clique para permitir'
+
+    els.btn.addEventListener('click', async () => {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission()
+        if (res === 'granted') { iniciar() }
+        else {
+          els.status.textContent = 'Permissão negada.'
+          els.status.className = 'status err'
+        }
+      } catch(err) {
+        els.status.textContent = 'Erro: ' + err.message
+        els.status.className = 'status err'
+      }
+    })
+
+  } else if (typeof DeviceOrientationEvent !== 'undefined') {
+    iniciar()
+  } else {
+    els.status.textContent = 'Sensor não suportado neste dispositivo.'
+    els.status.className = 'status err'
+  }
+</script>
+</body>
+</html>
